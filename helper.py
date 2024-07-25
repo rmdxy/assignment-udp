@@ -44,7 +44,6 @@ def decode_response(data):
     return header, question, rrs
 
 def create_response(header, question, ans, auth, add):
-
     def encode_section(str_type, data, req_data, total_size):
         if data:
             encoded_sec = ResourceRecord(str_type, data).encode()
@@ -65,6 +64,7 @@ def create_response(header, question, ans, auth, add):
     total_size = encode_section("Answer", ans, req_data, total_size)
     total_size = encode_section("Authority", auth, req_data, total_size)
     total_size = encode_section("Additional", add, req_data, total_size)
+    print(total_size)
 
     # Update header
     req_data[0:len(Header(total_size, header.qid).encode())] = Header(total_size, header.qid).encode()

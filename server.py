@@ -51,7 +51,6 @@ class Server:
 
         #delay period
         time.sleep(delay)
-
         ans_str, auth_str, add_str = self.find_record(question.r_data, question.str_type)
         response = create_response(header, question, ans_str, auth_str, add_str)
 
@@ -59,7 +58,7 @@ class Server:
         print(f"{date} snd {addr[1]}: {header.qid} {question.r_data} {question.str_type}")
         self.sock.sendto(response, addr)
 
-    def find_record(self, q_name, q_type, ans_str="", auth_str="", add_str=""):
+    def find_record(self, q_name, q_type, ans_str="", auth_str="", add_str=""):        
         if q_type == "A" and q_name in self.addr:
             return self.append_multiple_ans(q_name, "A", self.addr[q_name], ans_str, auth_str, add_str)
         elif q_type == "CNAME" and q_name in self.cname:
@@ -68,19 +67,28 @@ class Server:
             return self.append_multiple_ans(q_name, "NS", self.ns[q_name], ans_str, auth_str, add_str)
         elif q_type != "CNAME" and q_name in self.cname:
             ans_str = self.append_ans(q_name, "CNAME", self.cname[q_name], ans_str, auth_str, add_str)
-            return self.find_record(q_type, self.cname[q_name], ans_str, auth_str, add_str)
+            return self.find_record(list(self.cname[q_name])[0], q_type, ans_str, auth_str, add_str)
         else:
             ancestor = self.find_closest_ancestor(q_name)
             auth_str, add_str = self.append_ns_and_addr(ancestor, auth_str, add_str)
+
+        ans_str = ''.join(ans_str)
+        auth_str = ''.join(auth_str)
+        add_str = ''.join(add_str)
+        
         return ans_str, auth_str, add_str
 
     def append_ans(self, q_name, q_type, val, ans_str, auth_str, add_str):
-        ans_str += f"{q_name} {q_type} {val}\n"
+        if (isinstance(val, set)):
+            val = list(val)[0]
+        ans_str = ''.join(ans_str)
+        ans_str += f"{q_name}\t{q_type}\t{val}\n"
         return ans_str, auth_str, add_str
 
-    def append_multiple_ans(self, q_name, q_type, vals, ans_str, auth_str, add_str):
-        for val in vals:
-            ans_str += f"{q_name} {q_type} {val}\n"
+    def append_multiple_ans(self, q_name, q_type, vals, ans_str, auth_str, add_str):        
+        for val in sorted(vals):
+            ans_str = ''.join(ans_str)
+            ans_str += f"{q_name}\t{q_type}\t{val}\n"
         return ans_str, auth_str, add_str
 
     def find_closest_ancestor(self, q_name):
@@ -90,11 +98,13 @@ class Server:
         return ".".join(section) if section else "."
 
     def append_ns_and_addr(self, ancestor, auth_str, add_str):
+        auth_str = ''.join(auth_str)
+        add_str = ''.join(add_str)
         for val in self.ns[ancestor]:
-            auth_str += f"{ancestor} NS {val}\n"
+            auth_str += f"{ancestor}\tNS\t{val}\n"
             if val in self.addr:
                 for addr in self.addr[val]:
-                    add_str += f"{val} A {addr}\n"
+                    add_str += f"{val}\tA\t{addr}\n"
         return auth_str, add_str
 
 if __name__ == '__main__':

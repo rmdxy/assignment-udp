@@ -32,7 +32,7 @@ def client_run(server_port, q_name, q_type, timeout):
         header, question, rrs = decode_response(res)
         print(f"ID: {qid}\n")
         print("QUESTION SECTION:")
-        print(q_name, q_type, "\n")
+        print(f"{q_name}\t{q_type}\n")
         for rr in rrs:
             print(f"{rr.str_type.upper()} SECTION:")
             print(rr.r_data)
